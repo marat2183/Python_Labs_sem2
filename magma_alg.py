@@ -1,4 +1,15 @@
 # Функция перевода в биты
+def get_textblocks(text:str, size: int) -> list:
+    count = 0
+    text_blocks = []
+    for i in range(len(text)):
+        if (count + size) <= len(text):
+            text_blocks.append(text[count: count + size])
+            count += size
+        else:
+            break
+    return text_blocks
+
 def decode_to_binary(plaintext: str) -> str:
     binary_text = ''
     byte_len = 8
@@ -108,54 +119,62 @@ def decode_bin_to_ascii(text: str) -> str:
     return result
 
 
-def encode(plaintext_block:str, key:str) -> str:
+def encode(plaintext:str, key:str) -> str:
     ciphertext = ''
     n = 32
-    binary_data = decode_to_binary(plaintext_block)
-    left_part, right_part = divide_bin(binary_data)
-    round_keys = get_round_keys(key)
-    index_to_reverse = 7
-    for i in range(n):
-        if i == 31:
-            f_function_result = f_function(right_part, round_keys[index_to_reverse])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            ciphertext = xor_result + right_part
-        elif i <= 23:
-            f_function_result = f_function(right_part, round_keys[i % 8])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            left_part, right_part = right_part, xor_result
-        else:
-            f_function_result = f_function(right_part, round_keys[index_to_reverse])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            left_part, right_part = right_part, xor_result
-            index_to_reverse -= 1
-
+    plaintext_blocks = get_textblocks(plaintext, 8)
+    for plaintext_block in plaintext_blocks:
+        ciphertext_part = ''
+        binary_data = decode_to_binary(plaintext_block)
+        left_part, right_part = divide_bin(binary_data)
+        round_keys = get_round_keys(key)
+        index_to_reverse = 7
+        for i in range(n):
+            if i == 31:
+                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                ciphertext_part = xor_result + right_part
+            elif i <= 23:
+                f_function_result = f_function(right_part, round_keys[i % 8])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                left_part, right_part = right_part, xor_result
+            else:
+                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                left_part, right_part = right_part, xor_result
+                index_to_reverse -= 1
+        ciphertext += ciphertext_part
     return ciphertext
 
 def decode(ciphertext:str, key:str) -> str:
     plaintext = ''
     n = 32
-    binary_data = ciphertext
-    left_part, right_part = divide_bin(binary_data)
-    round_keys = get_round_keys(key)
-    index_to_reverse = 7
-    for i in range(n):
-        if i == 31:
-            f_function_result = f_function(right_part, round_keys[index_to_reverse])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            plaintext = xor_result + right_part
-        elif i > 7:
-            f_function_result = f_function(right_part, round_keys[i % 8])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            left_part, right_part = right_part, xor_result
-        else:
-            f_function_result = f_function(right_part, round_keys[index_to_reverse])
-            xor_result = xor_dif_parts(left_part, f_function_result)
-            left_part, right_part = right_part, xor_result
-            index_to_reverse -= 1
-
+    ciphertext_blocks = get_textblocks(ciphertext, 64)
+    for ciphertext_block in ciphertext_blocks:
+        binary_data = ciphertext_block
+        left_part, right_part = divide_bin(binary_data)
+        round_keys = get_round_keys(key)
+        index_to_reverse = 7
+        plaintext_part = ''
+        for i in range(n):
+            if i == 31:
+                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                plaintext_part = xor_result + right_part
+            elif i > 7:
+                f_function_result = f_function(right_part, round_keys[i % 8])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                left_part, right_part = right_part, xor_result
+            else:
+                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                xor_result = xor_dif_parts(left_part, f_function_result)
+                left_part, right_part = right_part, xor_result
+                index_to_reverse -= 1
+        plaintext += plaintext_part
     return decode_bin_to_ascii(plaintext)
 
-first = encode('hihihihi', 'armaarmaarmaarmaarmaarmaarmaarma')
+first = encode('Hello h.', 'armaarmaarmaarmaarmaarmaarmaarma')
+
 print(decode(first, 'armaarmaarmaarmaarmaarmaarmaarma'))
+
 
