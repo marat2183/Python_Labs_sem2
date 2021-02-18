@@ -1,3 +1,5 @@
+import json
+
 # Функция перевода в биты
 def get_textblocks(text:str, size: int) -> list:
     count = 0
@@ -11,16 +13,13 @@ def get_textblocks(text:str, size: int) -> list:
     return text_blocks
 
 def decode_to_binary(plaintext: str) -> str:
+    with open('test.json', encoding='utf-8') as f:
+        data = json.load(f)
     binary_text = ''
-    byte_len = 8
     for letter in plaintext:
-        binary_temp = bin(ord(letter))[2:]
-        if len(binary_temp) < byte_len:
-            count_of_nulls = byte_len - len(binary_temp)
-            binletter = count_of_nulls * '0' + binary_temp
-            binary_text += binletter
-        else:
-            binary_text += binary_temp
+        binary_temp = bin(data[letter])[2:].zfill(8)
+        # binary_temp = bin(rus_alphabet[letter])[2:]
+        binary_text += binary_temp
     return binary_text
 
 
@@ -38,16 +37,15 @@ def xor_dif_parts(left_part: str, right_part: str) -> str:
     return xor_result
 
 def get_round_keys(key: str) -> list:
+    key = decode_to_binary(key)
     count = 0
     round_keys = []
     for i in range(len(key)):
-        if (count + 4) <= len(key):
-            round_keys.append(key[count: count + 4])
-            count += 4
+        if (count + 32) <= len(key):
+            round_keys.append(key[count: count + 32])
+            count += 32
         else:
             break
-    for i in range(len(round_keys)):
-        round_keys[i] = decode_to_binary(round_keys[i])
     return round_keys
 
 def get_s_blocks_inputs(bin_data: str) -> list:
@@ -81,19 +79,11 @@ def cyclic_shift_to_left(data: str, number: int) -> str:
 
 
 def f_function(text_block: str, round_key: str) -> str:
-    S_blocks = [
-        [12,4,6,2,10,5,11,9,14,8,13,7,0,3,15,1],
-        [6,8,2,3,9,10,5,12,1,14,4,7,11,13,0,15],
-        [11,3,5,8,2,15,10,13,14,1,7,4,12,9,6,0],
-        [12,8,2,1,13,4,15,6,7,0,10,5,3,14,9,11],
-        [7,15,5,10,8,1,6,13,0,9,3,14,11,4,2,12],
-        [5,13,15,6,9,2,12,10,11,7,8,1,4,3,14,0],
-        [8,14,2,5,6,9,1,12,15,4,11,0,13,10,3,7],
-        [1,7,14,13,0,5,8,3,4,15,10,6,9,12,11,2]
-    ]
+    with open('S_blocks_matrix.json') as f:
+        data = json.load(f)
+    S_blocks = data['matrix']
     mod_32_result = mod_32(text_block, round_key)
     S_blocks_inputs = get_s_blocks_inputs(mod_32_result)
-
     result = ''
     for i in range(len(S_blocks_inputs)):
         col = int(S_blocks_inputs[i], 2)
@@ -122,10 +112,11 @@ def decode_bin_to_ascii(text: str) -> str:
 def encode(plaintext:str, key:str) -> str:
     ciphertext = ''
     n = 32
-    plaintext_blocks = get_textblocks(plaintext, 8)
+    bin_plaintext = decode_to_binary(plaintext)
+    plaintext_blocks = get_textblocks(bin_plaintext, 64)
     for plaintext_block in plaintext_blocks:
         ciphertext_part = ''
-        binary_data = decode_to_binary(plaintext_block)
+        binary_data = plaintext_block
         left_part, right_part = divide_bin(binary_data)
         round_keys = get_round_keys(key)
         index_to_reverse = 7
@@ -171,10 +162,19 @@ def decode(ciphertext:str, key:str) -> str:
                 left_part, right_part = right_part, xor_result
                 index_to_reverse -= 1
         plaintext += plaintext_part
-    return decode_bin_to_ascii(plaintext)
+        print(plaintext)
+    return plaintext
 
-first = encode('Hello h.', 'armaarmaarmaarmaarmaarmaarmaarma')
 
-print(decode(first, 'armaarmaarmaarmaarmaarmaarmaarma'))
+plaintext = 'hihihihi.hihihih'
+key = '12341234123412341234123412341234'
+print(decode_to_binary(plaintext))
+first = encode(plaintext, key)
+decode_res = decode(first, key)
+print(decode_res)
+if decode_res == decode_to_binary(plaintext):
+    print('ok')
+else:
+    print('fail')
 
 
