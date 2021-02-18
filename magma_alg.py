@@ -1,5 +1,4 @@
-import json
-
+import json, random, string
 # Функция перевода в биты
 def get_textblocks(text:str, size: int) -> list:
     count = 0
@@ -13,11 +12,11 @@ def get_textblocks(text:str, size: int) -> list:
     return text_blocks
 
 def decode_to_binary(plaintext: str) -> str:
-    with open('test.json', encoding='utf-8') as f:
-        data = json.load(f)
+    # with open('test.json', encoding='utf-8') as f:
+    #     data = json.load(f)
     binary_text = ''
     for letter in plaintext:
-        binary_temp = bin(data[letter])[2:].zfill(8)
+        binary_temp = bin(ord(letter))[2:].zfill(16)
         # binary_temp = bin(rus_alphabet[letter])[2:]
         binary_text += binary_temp
     return binary_text
@@ -98,9 +97,9 @@ def decode_bin_to_ascii(text: str) -> str:
     bytes = []
     result = ''
     for i in range(len(text)):
-        if (count + 8) <= len(text):
-            bytes.append(text[count: count + 8])
-            count += 8
+        if (count + 16) <= len(text):
+            bytes.append(text[count: count + 16])
+            count += 16
         else:
             break
     for byte in bytes:
@@ -119,21 +118,18 @@ def encode(plaintext:str, key:str) -> str:
         binary_data = plaintext_block
         left_part, right_part = divide_bin(binary_data)
         round_keys = get_round_keys(key)
-        index_to_reverse = 7
+        round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
+
         for i in range(n):
             if i == 31:
-                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                f_function_result = f_function(right_part, round_keys[round_keys_queue[i]])
                 xor_result = xor_dif_parts(left_part, f_function_result)
                 ciphertext_part = xor_result + right_part
-            elif i <= 23:
-                f_function_result = f_function(right_part, round_keys[i % 8])
-                xor_result = xor_dif_parts(left_part, f_function_result)
-                left_part, right_part = right_part, xor_result
             else:
-                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                f_function_result = f_function(right_part, round_keys[round_keys_queue[i]])
                 xor_result = xor_dif_parts(left_part, f_function_result)
                 left_part, right_part = right_part, xor_result
-                index_to_reverse -= 1
+
         ciphertext += ciphertext_part
     return ciphertext
 
@@ -147,34 +143,45 @@ def decode(ciphertext:str, key:str) -> str:
         round_keys = get_round_keys(key)
         index_to_reverse = 7
         plaintext_part = ''
+        round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
+        round_keys_queue.reverse()
         for i in range(n):
             if i == 31:
-                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                f_function_result = f_function(right_part, round_keys[round_keys_queue[i]])
                 xor_result = xor_dif_parts(left_part, f_function_result)
                 plaintext_part = xor_result + right_part
-            elif i > 7:
-                f_function_result = f_function(right_part, round_keys[i % 8])
-                xor_result = xor_dif_parts(left_part, f_function_result)
-                left_part, right_part = right_part, xor_result
             else:
-                f_function_result = f_function(right_part, round_keys[index_to_reverse])
+                f_function_result = f_function(right_part, round_keys[round_keys_queue[i]])
                 xor_result = xor_dif_parts(left_part, f_function_result)
                 left_part, right_part = right_part, xor_result
-                index_to_reverse -= 1
+
         plaintext += plaintext_part
-        print(plaintext)
-    return plaintext
+
+    return decode_bin_to_ascii(plaintext)
+
+count = 0
+def tests(N: int, text_len: int):
+    key_len = 16
+    count = 0
+    for i in range(N):
+        plaintext = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(text_len))
+        key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(key_len))
+        first = encode(plaintext, key)
+        decode_res = decode(first, key)
+
+        if decode_res == plaintext:
+            count += 1
+    if count == N:
+        print('success')
+
+    return
 
 
-plaintext = 'hihihihi.hihihih'
-key = '12341234123412341234123412341234'
-print(decode_to_binary(plaintext))
+
+plaintext = "Приветпр"
+key = 'армаармаармаарма'
 first = encode(plaintext, key)
 decode_res = decode(first, key)
 print(decode_res)
-if decode_res == decode_to_binary(plaintext):
+if decode_res == plaintext:
     print('ok')
-else:
-    print('fail')
-
-
