@@ -167,6 +167,7 @@ def tests(N: int, text_len: int):
         plaintext = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(text_len))
         key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(key_len))
         first = encode(plaintext, key)
+        # print(decode_bin_to_ascii(first))
         decode_res = decode(first, key)
 
         if decode_res == plaintext:
@@ -178,10 +179,15 @@ def tests(N: int, text_len: int):
 
 
 
-plaintext = "Приветпр"
-key = 'армаармаармаарма'
+plaintext = "hihi"
+key = 'armaarmaarmaarma'
 first = encode(plaintext, key)
-decode_res = decode(first, key)
-print(decode_res)
-if decode_res == plaintext:
-    print('ok')
+# print(first)
+# decode_res = decode(first, key)
+# print(decode_res)
+# if decode_res == plaintext:
+#     print('ok')
+print(decode_to_binary(plaintext))
+print(decode_to_binary(key))
+tests(100, 16)
+
