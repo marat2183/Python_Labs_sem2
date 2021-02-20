@@ -164,7 +164,7 @@ def tests(N: int, text_len: int) -> bool:
         plaintext = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(text_len))
         key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(key_len))
         first = encode(plaintext, key)
-        decode_res = decode(decode_from_bin_to_hex(first), key)
+        decode_res = decode(first, key)
         if decode_res == plaintext:
             count += 1
     if count == N:
@@ -174,29 +174,26 @@ def tests(N: int, text_len: int) -> bool:
 
 
 
-# mode = input('''
-# Режим работы:
-# 1) Зашифровать
-# 2) Расшифровать
-# Ответ:
-# ''')
-# if mode == '1':
-#     pt = input('pt: ')
-#     key = int(input('key: '))
-#     try:
-#         result = encode(pt, key)
-#         print('ciphertext:', decode_from_bin_to_hex(result))
-#         print(decode(result, key))
-#     except Exception as e:
-#        print(str(e))
-# elif mode == '2':
-#     ct = input('ct: ')
-#     key = int(input('key: '))
-#     try:
-#         result = decode(ct, key)
-#         print(decode_from_bin_to_ascii(result))
-#     except Exception as e:
-#         print(str(e))
-a = encode('Привкйцуйу', 123)
-if (tests(100, 129)):
-    print('ok')
+mode = input('''
+Режим работы:
+1) Зашифровать
+2) Расшифровать
+Ответ:
+''')
+if mode == '1':
+    pt = input('pt: ')
+    key = int(input('key: '))
+    try:
+        result = encode(pt, key)
+        print('ciphertext:', decode_from_bin_to_hex(result))
+        print(decode(result, key))
+    except Exception as e:
+       print(str(e))
+elif mode == '2':
+    ct = input('ct: ')
+    key = int(input('key: '))
+    try:
+        result = decode(ct, key)
+        print(result)
+    except Exception as e:
+        print(str(e))
