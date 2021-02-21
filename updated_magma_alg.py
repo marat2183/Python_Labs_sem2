@@ -1,8 +1,8 @@
 import json
 import random
 import string
-from typing import Union
 from binascii import hexlify, unhexlify
+from typing import Union
 
 
 # Функция перевода в биты
@@ -17,8 +17,17 @@ def get_textblocks(text: str, size: int) -> list:
             break
     return text_blocks
 
+def padding(bin_text:str, text_type: str, text_block_len: int):
+    length = len(bin_text)
+    if text_type == 'key' and length > 256:
+        raise Exception("Длина ключа > 256 бит")
+    if (length % text_block_len) != 0:
+        need_to_add = text_block_len - (length % text_block_len)
+        bin_text = bin_text.zfill(length + need_to_add)
+    return bin_text
 
-def text_decode_to_binary(text: Union[str, bytes], block_len: int, text_type: str) -> str:
+
+def text_decode_to_binary(text: Union[str, bytes]) -> str:
     if type(text) is bytes:
         hex_str = hexlify(text).decode()
         int_str = int(hex_str, 16)
@@ -31,12 +40,6 @@ def text_decode_to_binary(text: Union[str, bytes], block_len: int, text_type: st
             hex_str = hexlify(text.encode()).decode()
             int_str = int(hex_str, 16)
     bin_str = bin(int_str)[2:]
-    if text_type == 'key' and len(bin_str) > 256:
-        raise Exception("Длина ключа > 256 бит")
-    length = len(bin_str)
-    if (length % block_len) != 0:
-        need_to_add = block_len - (length % block_len)
-        bin_str = bin_str.zfill(length + need_to_add)
     return bin_str
 
 
@@ -49,7 +52,8 @@ def xor_dif_parts(left_part: str, right_part: str) -> str:
 
 
 def get_round_keys(key: str) -> list:
-    key = text_decode_to_binary(key, 256, 'key')
+    key = text_decode_to_binary(key)
+    key = padding(key, 'key', 256)
     round_keys = get_textblocks(key, 32)
     return round_keys
 
@@ -108,14 +112,11 @@ def Feistel_scheme(text_block: str, round_keys: list, round_keys_queue: list, ro
     return text_part
 
 
-def decode_from_bin_to_ascii(bin_str: str) -> Union[str, bytes]:
+def decode_from_bin_to_hex(bin_str: str) -> Union[str, bytes]:
     int_str = int(bin_str, 2)
     hex_str = hex(int_str)[2:]
-    try:
-        ascii_str = unhexlify(hex_str).decode()
-    except:
-        ascii_str = hex_str
-    return ascii_str
+    return hex_str
+
 
 def decode_from_bin_to_hex(bin_str: str) -> Union[str, bytes]:
     int_str = int(bin_str, 2)
@@ -126,26 +127,30 @@ def decode_from_bin_to_hex(bin_str: str) -> Union[str, bytes]:
 def encode(plaintext: str, key: Union[str, int]) -> str:
     ciphertext = ''
     n = 32
-    bin_plaintext = text_decode_to_binary(plaintext, 64, 'plaintext')
+    bin_plaintext = text_decode_to_binary(plaintext)
+    bin_plaintext = padding(bin_plaintext, 'plaintext', 64)
     plaintext_blocks = get_textblocks(bin_plaintext, 64)
     for plaintext_block in plaintext_blocks:
         round_keys = get_round_keys(key)
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
         ciphertext_part = Feistel_scheme(plaintext_block, round_keys, round_keys_queue, n)
         ciphertext += ciphertext_part
-    return ciphertext
+    return decode_from_bin_to_hex(ciphertext)
 
 
-def decode(ciphertext: Union[str,bytes], key: Union[str, int]) -> str:
+def decode(ciphertext: Union[str, bytes], key: Union[str, int]) -> str:
     plaintext = ''
     n = 32
     if type(ciphertext) is not str:
-        ciphertext = text_decode_to_binary(ciphertext, 64, 'ciphertext')
+        ciphertext = text_decode_to_binary(ciphertext)
+        ciphertext = padding(ciphertext, 'ciphertext', 64)
     else:
         try:
             int(ciphertext, 2)
+            ciphertext = padding(ciphertext, 'ciphertext', 64)
         except ValueError:
-            ciphertext = text_decode_to_binary(ciphertext, 64, 'ciphertext')
+            ciphertext = text_decode_to_binary(ciphertext)
+            ciphertext = padding(ciphertext, 'ciphertext', 64)
     ciphertext_blocks = get_textblocks(ciphertext, 64)
     for ciphertext_block in ciphertext_blocks:
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
@@ -153,47 +158,61 @@ def decode(ciphertext: Union[str,bytes], key: Union[str, int]) -> str:
         round_keys = get_round_keys(key)
         plaintext_part = Feistel_scheme(ciphertext_block, round_keys, round_keys_queue, n)
         plaintext += plaintext_part
-    return decode_from_bin_to_ascii(plaintext)
+    hex_result = decode_from_bin_to_hex(plaintext)
+    plaintext = unhexlify(hex_result).decode()
+    return plaintext
 
 
-def tests(N: int, text_len: int) -> bool:
+def tests(n: int, text_len: int) -> bool:
     success = False
     key_len = 16
     count = 0
-    for i in range(N):
+    for i in range(n):
         plaintext = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(text_len))
         key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(key_len))
         first = encode(plaintext, key)
         decode_res = decode(first, key)
         if decode_res == plaintext:
             count += 1
-    if count == N:
+    if count == n:
         success = True
     return success
 
 
+# mode = input('''
+# Режим работы:
+# 1) Зашифровать
+# 2) Расшифровать
+# Ответ:
+# ''')
+# if mode == '1':
+#     with open('plaintext.txt', 'r', encoding='utf-8') as f:
+#         pt = f.read()
+#     with open('key.txt', 'r', encoding='utf-8') as f:
+#         key = int(f.read())
+#     try:
+#         result = encode(pt, key)
+#         print('ciphertext:', result)
+#         with open('ciphertext.txt', 'w', encoding='utf-8') as f:
+#             f.write(result)
+#     except Exception as e:
+#        print(str(e))
+# elif mode == '2':
+#     with open('ciphertext.txt', 'r', encoding='utf-8') as f:
+#         ct = f.read()
+#     with open('key.txt', 'r', encoding='utf-8') as f:
+#         key = int(f.read())
+#     try:
+#         result = decode(ct, key)
+#         print('plaintext: ', result)
+#         with open('plaintext.txt', 'w', encoding='utf-8') as f:
+#             f.write(result)
+#     except Exception as e:
+#         print(str(e))
 
+if (tests(100, 650)):
+    print('ok')
 
-mode = input('''
-Режим работы:
-1) Зашифровать
-2) Расшифровать
-Ответ:
-''')
-if mode == '1':
-    pt = input('pt: ')
-    key = int(input('key: '))
-    try:
-        result = encode(pt, key)
-        print('ciphertext:', decode_from_bin_to_hex(result))
-        print(decode(result, key))
-    except Exception as e:
-       print(str(e))
-elif mode == '2':
-    ct = input('ct: ')
-    key = int(input('key: '))
-    try:
-        result = decode(ct, key)
-        print(result)
-    except Exception as e:
-        print(str(e))
+# a = encode('flag{magma_cipher}', 'testas')
+# print(a)
+# print(decode(a, 'testas'))
