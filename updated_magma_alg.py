@@ -179,40 +179,40 @@ def tests(n: int, text_len: int) -> bool:
     return success
 
 
-# mode = input('''
-# Режим работы:
-# 1) Зашифровать
-# 2) Расшифровать
-# Ответ:
-# ''')
-# if mode == '1':
-#     with open('plaintext.txt', 'r', encoding='utf-8') as f:
-#         pt = f.read()
-#     with open('key.txt', 'r', encoding='utf-8') as f:
-#         key = int(f.read())
-#     try:
-#         result = encode(pt, key)
-#         print('ciphertext:', result)
-#         with open('ciphertext.txt', 'w', encoding='utf-8') as f:
-#             f.write(result)
-#     except Exception as e:
-#        print(str(e))
-# elif mode == '2':
-#     with open('ciphertext.txt', 'r', encoding='utf-8') as f:
-#         ct = f.read()
-#     with open('key.txt', 'r', encoding='utf-8') as f:
-#         key = int(f.read())
-#     try:
-#         result = decode(ct, key)
-#         print('plaintext: ', result)
-#         with open('plaintext.txt', 'w', encoding='utf-8') as f:
-#             f.write(result)
-#     except Exception as e:
-#         print(str(e))
+mode = input('''
+Режим работы:
+1) Зашифровать
+2) Расшифровать
+Ответ:
+''')
+if mode == '1':
+    with open('plaintext.txt', 'r', encoding='utf-8') as f:
+        pt = f.read()
+    with open('key.txt', 'r', encoding='utf-8') as f:
+        key = int(f.read())
+    try:
+        result = encode(pt, key)
+        print('ciphertext:', result, sep='\n')
+        with open('ciphertext.txt', 'w', encoding='utf-8') as f:
+            f.write(result)
+    except Exception as e:
+       print(str(e))
+elif mode == '2':
+    with open('ciphertext.txt', 'r', encoding='utf-8') as f:
+        ct = f.read()
+    with open('key.txt', 'r', encoding='utf-8') as f:
+        key = int(f.read())
+    try:
+        result = decode(ct, key)
+        print('plaintext:', result, sep='\n')
+        with open('plaintext.txt', 'w', encoding='utf-8') as f:
+            f.write(result)
+    except Exception as e:
+        print(str(e))
 
-if (tests(100, 650)):
-    print('ok')
+# if (tests(200, 70)):
+#     print('ok')
 
-# a = encode('flag{magma_cipher}', 'testas')
+# a = encode('Привет', 'testas')
 # print(a)
-# print(decode(a, 'testas'))
+# # print(decode(a, 'testas'))
