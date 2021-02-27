@@ -5,7 +5,6 @@ from binascii import hexlify, unhexlify
 from typing import Union
 
 
-# Функция перевода в биты
 def get_textblocks(text: str, size: int) -> list:
     count = 0
     text_blocks = []
@@ -17,7 +16,8 @@ def get_textblocks(text: str, size: int) -> list:
             break
     return text_blocks
 
-def padding(bin_text:str, text_type: str, text_block_len: int):
+
+def padding(bin_text: str, text_type: str, text_block_len: int):
     length = len(bin_text)
     if text_type == 'key' and length > 256:
         raise Exception("Длина ключа > 256 бит")
@@ -27,23 +27,24 @@ def padding(bin_text:str, text_type: str, text_block_len: int):
     return bin_text
 
 
-def text_decode_to_binary(text: str) -> str:
-    if type(text) is bytes:
-        hex_str = hexlify(text).decode()
-        int_str = int(hex_str, 16)
-    elif type(text) is int:
-        int_str = text
-    else:
-        try:
-            int_str = int(text, 16)
-        except:
+def text_decode_to_binary(text: Union[str, int], operation: str) -> str:
+    if operation == 'decode':
+        int_str = int(text, 16)
+        bin_str = bin(int_str)[2:]
+    elif operation == 'key':
+        if type(text) is int:
+            bin_str = bin(text)[2:]
+        else:
             hex_str = hexlify(text.encode()).decode()
             int_str = int(hex_str, 16)
-    bin_str = bin(int_str)[2:]
+            bin_str = bin(int_str)[2:]
+    else:
+        hex_str = hexlify(text.encode()).decode()
+        int_str = int(hex_str, 16)
+        bin_str = bin(int_str)[2:]
     return bin_str
 
 
-# Xor левой и правой части открытого текста
 def xor_dif_parts(left_part: str, right_part: str) -> str:
     xor_result = ''
     for left_bit, right_bit in zip(left_part, right_part):
@@ -52,7 +53,7 @@ def xor_dif_parts(left_part: str, right_part: str) -> str:
 
 
 def get_round_keys(key: str) -> list:
-    key = text_decode_to_binary(key)
+    key = text_decode_to_binary(key, 'key')
     key = padding(key, 'key', 256)
     round_keys = get_textblocks(key, 32)
     return round_keys
@@ -121,32 +122,22 @@ def decode_from_bin_to_hex(bin_str: str) -> Union[str, bytes]:
 def encode(plaintext: str, key: Union[str, int]) -> str:
     ciphertext = ''
     n = 32
-    bin_plaintext = text_decode_to_binary(plaintext)
+    bin_plaintext = text_decode_to_binary(plaintext, 'encode')
     bin_plaintext = padding(bin_plaintext, 'plaintext', 64)
     plaintext_blocks = get_textblocks(bin_plaintext, 64)
     for plaintext_block in plaintext_blocks:
         round_keys = get_round_keys(key)
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
-
         ciphertext_part = Feistel_scheme(plaintext_block, round_keys, round_keys_queue, n)
         ciphertext += ciphertext_part
-
     return decode_from_bin_to_hex(ciphertext)
 
 
-def decode(ciphertext: str, key: str) -> str:
+def decode(ciphertext: str, key: Union[str, int]) -> str:
     plaintext = ''
     n = 32
-    if type(ciphertext) is not str:
-        ciphertext = text_decode_to_binary(ciphertext)
-        ciphertext = padding(ciphertext, 'ciphertext', 64)
-    else:
-        try:
-            int(ciphertext, 2)
-            ciphertext = padding(ciphertext, 'ciphertext', 64)
-        except ValueError:
-            ciphertext = text_decode_to_binary(ciphertext)
-            ciphertext = padding(ciphertext, 'ciphertext', 64)
+    ciphertext = text_decode_to_binary(ciphertext, 'decode')
+    ciphertext = padding(ciphertext, 'ciphertext', 64)
     ciphertext_blocks = get_textblocks(ciphertext, 64)
     for ciphertext_block in ciphertext_blocks:
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
@@ -205,9 +196,9 @@ def tests(n: int, text_len: int) -> bool:
 #             f.write(result)
 #     except Exception as e:
 #         print(str(e))
-# # #
-if (tests(15, 64)):
+# #
+if (tests(15, 125)):
     print('ok')
 
-a = encode('asd', 3456786512381928)
-print(decode(a, 3456786512381928))
+# a = encode('a', 3456786514234234212312312312312312313123141241342413)
+# print(decode(a, 3456786514234234212312312312312312313123141241342413))
