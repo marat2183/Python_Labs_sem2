@@ -5,6 +5,10 @@ from binascii import hexlify, unhexlify
 from typing import Union
 
 
+
+
+
+
 def get_textblocks(text: str, size: int) -> list:
     count = 0
     text_blocks = []
@@ -83,9 +87,10 @@ def cyclic_shift_to_left(data: str, number: int) -> str:
 
 
 def f_function(text_block: str, round_key: str) -> str:
-    with open('S_blocks_matrix.json') as f:
-        data = json.load(f)
-    S_blocks = data['matrix']
+    # with open('S_blocks_matrix.json') as f:
+    #     data = json.load(f)
+    global S_blocks
+    # S_blocks = data['matrix']
     mod_32_result = mod_32(text_block, round_key)
     S_blocks_inputs = get_s_blocks_inputs(mod_32_result)
     result = ''
@@ -98,7 +103,7 @@ def f_function(text_block: str, round_key: str) -> str:
     return result
 
 
-def Feistel_scheme(text_block: str, round_keys: list, round_keys_queue: list, rounds_number: int):
+def feistel_scheme(text_block: str, round_keys: list, round_keys_queue: list, rounds_number: int):
     text_part = ''
     left_part, right_part = get_textblocks(text_block, 32)
     for i in range(rounds_number):
@@ -128,7 +133,7 @@ def encode(plaintext: str, key: Union[str, int]) -> str:
     for plaintext_block in plaintext_blocks:
         round_keys = get_round_keys(key)
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
-        ciphertext_part = Feistel_scheme(plaintext_block, round_keys, round_keys_queue, n)
+        ciphertext_part = feistel_scheme(plaintext_block, round_keys, round_keys_queue, n)
         ciphertext += ciphertext_part
     return decode_from_bin_to_hex(ciphertext)
 
@@ -143,7 +148,7 @@ def decode(ciphertext: str, key: Union[str, int]) -> str:
         round_keys_queue = [0, 1, 2, 3, 4, 5, 6, 7] * 3 + [7, 6, 5, 4, 3, 2, 1, 0]
         round_keys_queue.reverse()
         round_keys = get_round_keys(key)
-        plaintext_part = Feistel_scheme(ciphertext_block, round_keys, round_keys_queue, n)
+        plaintext_part = feistel_scheme(ciphertext_block, round_keys, round_keys_queue, n)
         plaintext += plaintext_part
     hex_result = decode_from_bin_to_hex(plaintext)
     plaintext = unhexlify(hex_result).decode()
@@ -166,39 +171,46 @@ def tests(n: int, text_len: int) -> bool:
     return success
 
 
-# mode = input('''
-# Режим работы:
-# 1) Зашифровать
-# 2) Расшифровать
-# Ответ:
-# ''')
-# if mode == '1':
-#     with open('plaintext.txt', 'r', encoding='utf-8') as f:
-#         pt = f.read()
-#     with open('key.txt', 'r', encoding='utf-8') as f:
-#         key = int(f.read())
-#     try:
-#         result = encode(pt, key)
-#         print('ciphertext:', result, sep='\n')
-#         with open('ciphertext.txt', 'w', encoding='utf-8') as f:
-#             f.write(result)
-#     except Exception as e:
-#        print(str(e))
-# elif mode == '2':
-#     with open('ciphertext.txt', 'r', encoding='utf-8') as f:
-#         ct = f.read()
-#     with open('key.txt', 'r', encoding='utf-8') as f:
-#         key = int(f.read())
-#     try:
-#         result = decode(ct, key)
-#         print('plaintext:', result, sep='\n')
-#         with open('plaintext.txt', 'w', encoding='utf-8') as f:
-#             f.write(result)
-#     except Exception as e:
-#         print(str(e))
-# #
-if (tests(15, 125)):
+with open('S_blocks_matrix.json') as f:
+    data = json.load(f)
+S_blocks = data['matrix']
+
+mode = input('''
+Режим работы:
+1) Зашифровать
+2) Расшифровать
+Ответ:
+''')
+if mode == '1':
+    with open('plaintext.txt', 'r', encoding='utf-8') as f:
+        pt = f.read()
+    with open('key.txt', 'r', encoding='utf-8') as f:
+        key = int(f.read())
+    try:
+        result = encode(pt, key)
+        print('ciphertext:', result, sep='\n')
+        with open('ciphertext.txt', 'w', encoding='utf-8') as f:
+            f.write(result)
+    except Exception as e:
+       print(str(e))
+elif mode == '2':
+    with open('ciphertext.txt', 'r', encoding='utf-8') as f:
+        ct = f.read()
+    with open('key.txt', 'r', encoding='utf-8') as f:
+        key = int(f.read())
+    try:
+        result = decode(ct, key)
+        print('plaintext:', result, sep='\n')
+        with open('plaintext.txt', 'w', encoding='utf-8') as f:
+            f.write(result)
+    except Exception as e:
+        print(str(e))
+
+
+if (tests(1, 1000)):
     print('ok')
 
-# a = encode('a', 3456786514234234212312312312312312313123141241342413)
+#
+# a = encode('hello', 3456786514234234212312312312312312313123141241342413)
+# print(a)
 # print(decode(a, 3456786514234234212312312312312312313123141241342413))
