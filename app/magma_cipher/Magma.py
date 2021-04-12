@@ -4,8 +4,13 @@ import string
 from binascii import hexlify, unhexlify
 from typing import Union
 import time
+from termcolor import colored
+import os
 
-with open('S_blocks_matrix.json') as f:
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(dir_path + '\\S_blocks_matrix.json') as f:
     data = json.load(f)
 s_blocks = data['matrix']
 
@@ -25,7 +30,7 @@ def get_text_blocks(text: str, size: int) -> list:
 def padding(bin_text: str, text_type: str, text_block_len: int):
     length = len(bin_text)
     if text_type == 'key' and length > 256:
-        raise Exception("Длина ключа > 256 бит")
+        raise ValueError("Длина ключа > 256 бит")
     if (length % text_block_len) != 0:
         need_to_add = text_block_len - (length % text_block_len)
         bin_text = bin_text.zfill(length + need_to_add)
@@ -116,7 +121,8 @@ def decode_from_bin_to_hex(bin_str: str) -> Union[str, bytes]:
     return hex_str
 
 
-def encode(plaintext: str, key: Union[str, int]) -> str:
+def encode(plaintext: str) -> str:
+    key = 12312312312312123123123123123123123131231231231312312123123
     cipher_text = ''
     n = 32
     bin_plaintext = text_decode_to_binary(plaintext, 'encode')
@@ -129,7 +135,8 @@ def encode(plaintext: str, key: Union[str, int]) -> str:
     return decode_from_bin_to_hex(cipher_text)
 
 
-def decode(cipher_text: str, key: Union[str, int]) -> str:
+def decode(cipher_text: str) -> str:
+    key = 12312312312312123123123123123123123131231231231312312123123
     plaintext = ''
     n = 32
     cipher_text = text_decode_to_binary(cipher_text, 'decode')
@@ -161,44 +168,61 @@ def tests(n: int, text_len: int) -> bool:
     return success
 
 
-def main():
-    mode = input('''
-Режим работы:
-1) Encrypt
-2) Decrypt
-Answer: ''')
+# def main():
+#     mode = input('''
+# Режим работы:
+# 1) Зашифровать
+# 2) Расшифровать
+# Ответ: ''')
+#
+#     if mode == '1':
+#         # start_time = time.time()
+#         # with open('plaintext', 'r', encoding='utf-8') as f:
+#         #     pt = f.read()
+#         # with open('key', 'r', encoding='utf-8') as f:
+#         #     key = int(f.read())
+#         try:
+#             pt = input('Открытый текст: ')
+#             key = input('Ключ: ')
+#             if not (pt and key):
+#                 raise ValueError("Ключ или строка пустые")
+#             if key.isdecimal():
+#                 key = int(key)
+#             else:
+#                 raise ValueError("Ключ не число")
+#             result = encode(pt, key)
+#             print('Шифротекст:', result)
+#             # with open('ciphertext', 'w', encoding='utf-8') as f:
+#             #     f.write(result)
+#         except ValueError as e:
+#             print(colored(str(e), 'red'))
+#         except Exception:
+#             print(colored("Произошла непредвиденная ошибка", 'red'))
+#         # print(f'time: {time.time() - start_time}')
+#     elif mode == '2':
+#         # start_time = time.time()
+#         # with open('ciphertext', 'r', encoding='utf-8') as f:
+#         #     ct = f.read()
+#         # with open('key', 'r', encoding='utf-8') as f:
+#         #     key = int(f.read())
+#         try:
+#             ct = input('Шифротекст: ')
+#             key = input('Ключ: ')
+#             if not(ct and key):
+#                 raise ValueError("Ключ или строка пустые")
+#             if key.isdecimal():
+#                 key = int(key)
+#             else:
+#                 raise ValueError("Ключ не число")
+#             result = decode(ct, key)
+#             print('Открытый текст:', result)
+#             # with open('plaintext', 'w', encoding='utf-8') as f:
+#             #     f.write(result)
+#         except ValueError as e:
+#             print(colored(str(e), 'red'))
+#         except Exception:
+#             print(colored("Произошла непредвиденная ошибка", 'red'))
+#         # print(f'time: {(time.time() - start_time)}')
+#     else:
+#         print(colored('Выбран несуществующий режим работы', 'red'))
 
-    if mode == '1':
-        start_time = time.time()
-        with open('plaintext', 'r', encoding='utf-8') as f:
-            pt = f.read()
-        with open('key', 'r', encoding='utf-8') as f:
-            key = int(f.read())
-        try:
-            result = encode(pt, key)
-            print('ciphertext:', result, sep='\n')
-            with open('ciphertext', 'w', encoding='utf-8') as f:
-                f.write(result)
-        except Exception as e:
-            print(str(e))
-        print(f'time: {time.time() - start_time}')
-    elif mode == '2':
-        start_time = time.time()
-        with open('ciphertext', 'r', encoding='utf-8') as f:
-            ct = f.read()
-        with open('key', 'r', encoding='utf-8') as f:
-            key = int(f.read())
-        try:
-            result = decode(ct, key)
-            print('plaintext:', result, sep='\n')
-            with open('plaintext', 'w', encoding='utf-8') as f:
-                f.write(result)
-        except Exception as e:
-            print(str(e))
-        print(f'time: {(time.time() - start_time)}')
-    else:
-        print('Выбран несуществующий режим работы')
-
-
-if __name__ == '__main__':
-    main()
